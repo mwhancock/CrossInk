@@ -1,4 +1,9 @@
 # Changelog
+## [Unreleased]
+
+### Changed
+- Hardcover in-reader `Mark Currently Reading` now toggles between `Reading` and `Paused` so pressing it again removes the book from the active now-reading state without extra menu actions.
+
 ## [v1.3.4] - 2026-06-24
 
 ### Added

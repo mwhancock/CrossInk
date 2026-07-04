@@ -276,14 +276,18 @@ void HardcoverBookActivity::runManualSync(Action action, int rating) {
   GUI.drawPopup(renderer, tr(STR_HARDCOVER_SYNCING));
 
   HardcoverClient::Error error = HardcoverClient::OK;
+  int nextStatusId = 0;
   switch (action) {
     case MarkReading:
-      error = HardcoverClient::upsertBookStatus(bookId, 2);
+      // Lightweight toggle: Reading <-> Paused (on hold).
+      nextStatusId = statusId == 2 ? 4 : 2;
+      error = HardcoverClient::upsertBookStatus(bookId, nextStatusId);
       break;
     case UpdateProgress:
       error = HardcoverClient::updateProgress(bookId, progressPercent);
       break;
     case MarkRead:
+      nextStatusId = 3;
       error = HardcoverClient::upsertBookStatus(bookId, 3);
       if (error == HardcoverClient::OK) {
         error = HardcoverClient::updateProgress(bookId, 100);
@@ -303,8 +307,7 @@ void HardcoverBookActivity::runManualSync(Action action, int rating) {
   GUI.drawPopup(renderer, error == HardcoverClient::OK ? tr(STR_HARDCOVER_SYNCED)
                                                        : hardcoverErrorMessage(error, errorBuffer, sizeof(errorBuffer)));
   if (error == HardcoverClient::OK) {
-    if (action == MarkReading || action == MarkRead) {
-      const int nextStatusId = action == MarkRead ? 3 : 2;
+    if (nextStatusId > 0) {
       if (HARDCOVER_LINKS.updateLastStatus(epubPath, nextStatusId)) {
         statusId = nextStatusId;
       }
