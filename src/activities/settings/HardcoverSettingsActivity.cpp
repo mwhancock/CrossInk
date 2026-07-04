@@ -40,8 +40,9 @@ StrId hardcoverErrorLabelId(const HardcoverClient::Error error) {
     case HardcoverClient::API_ERROR:
       return StrId::STR_HARDCOVER_ERROR_API;
     case HardcoverClient::OK:
-    default:
       return StrId::STR_NONE_OPT;
+    default:
+      return StrId::STR_UNKNOWN_ERROR;
   }
 }
 
