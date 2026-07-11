@@ -12,9 +12,8 @@ In scope:
 - Add lightweight Hardcover features (status/progress/rating/linking) that support reading flow without turning the firmware into a full social/discovery client.
 
 Out of scope:
-- Replacing the app architecture with a divergent codebase.
+- Full rewrites of core architecture.
 - Feature additions that add heavy always-on networking or broad non-reading surface area.
-- Chasing every upstream difference from CrossCover.
 - Heavy Hardcover social/discovery surfaces that do not directly improve the core reading loop.
 
 ## Roadmap (near-term)
@@ -27,26 +26,27 @@ Out of scope:
 
 ## What this fork includes
 
-### Core reader improvements retained from CrossInk
+### Core reader (from CrossInk)
 - Typography-focused defaults (ChareInk, Lexend Deca, Bitter) and extended font sizes.
 - Reader QoL additions (book options, reading stats, controls customization, bookmarks/clippings, etc.).
 
-### Hardcover integration (current)
-- Settings entry for Hardcover API key import + authentication.
-- Home screen entry for a Hardcover library view.
-- In-reader Hardcover menu with:
-  - Manual link by Book ID / ISBN
-  - Automatic matching/linking
-  - Mark currently reading
-  - Mark read
-  - Progress update
-  - Rating
-  - Auto-sync on reader exit with configurable threshold
-- Reliability updates made during integration:
-  - Reduced Hardcover request memory pressure in reader flow.
-  - Avoided unnecessary section teardown/reindex when returning from Hardcover actions.
-- Visual state indicators in the reader Hardcover menu:
-  - `[x]` / `[ ]` next to **Mark Currently Reading** and **Mark Read** to show what was already set for the linked book.
+### CrossHarbor additions
+- **EPUB memory reliability**: WiFi is disabled during chapter indexing to maximize heap on ESP32-C3, and restored on exit. Eliminates OOM crashes when opening fresh books.
+- **Custom boot branding**: CrossHarbor anchor logo and name on boot and sleep screens.
+- **Hardcover integration**:
+  - Settings entry for Hardcover API key import + authentication.
+  - Home screen entry for a Hardcover library view.
+  - In-reader Hardcover menu with manual/auto book linking, mark currently reading, mark read, progress update, and rating.
+  - Auto-sync on reader exit with configurable threshold.
+  - Visual state indicators (`[x]` / `[ ]`) in the menu reflecting what's already set for the linked book.
+- **OTA updates**: device checks for new CrossHarbor releases and flashes wirelessly via Settings → Check for Updates.
+
+## Branches
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Stable releases. Safe for daily use. |
+| `beta` | Pre-release. New features, more testing needed. |
 
 ## Hardcover quick setup
 
@@ -83,7 +83,7 @@ Flash directly:
 pio run -e default -t upload
 ```
 
-Or use the generated `.bin` from `.pio/build/default/` with the web installer.
+Or download a pre-built `.bin` from the [Releases](../../releases) page and flash it via the web installer or SD card.
 
 If submodules are missing, run:
 
@@ -92,10 +92,24 @@ git submodule sync --recursive
 git submodule update --init --recursive
 ```
 
-## Upstream and credits
+## Contributing
 
-- **CrossInk**: primary upstream firmware base and ongoing architecture/features.
-- **CrossCover**: source reference for Hardcover integration patterns and related UX ideas.
-- **CrossPoint Reader community** and contributors across all upstream projects.
+Contributions are welcome! A few guidelines to keep things tidy:
 
-CrossHarbor’s integration and iteration work was completed with assistance from **GitHub Copilot / AI tooling** (code exploration, implementation support, and debugging workflows).
+- **Keep PRs narrow.** One feature or fix per PR. Avoid bundling unrelated cleanup.
+- **No architecture rewrites.** The Activity system, HAL, and renderer are out of scope for change.
+- **Memory matters.** This runs on ESP32-C3 with ~380 KB RAM and no PSRAM. Explain any new heap allocation and prefer stack or static storage where practical. See `AGENTS.md` for the full resource rules.
+- **Test on hardware.** Simulator builds are useful for fast iteration but real hardware is required before merging anything reader or memory-sensitive.
+- **Follow the commit style:** `type: short summary` (e.g. `fix:`, `feat:`, `chore:`, `docs:`).
+- **Update `CHANGELOG.md`** with a human-readable entry for any user-visible change.
+
+If you're unsure whether an idea fits the scope, open an issue first.
+
+## Credits
+
+- **CrossInk** — primary upstream firmware base and ongoing architecture.
+- **CrossCover** — reference for Hardcover integration patterns and UX ideas.
+- **CrossPoint Reader community** and contributors across upstream projects.
+
+CrossHarbor's integration and iteration work was completed with assistance from AI tooling (code exploration, implementation support, and debugging workflows).
+
