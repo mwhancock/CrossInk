@@ -4,10 +4,9 @@ Community-focused firmware fork for the Xteink X3/X4 based on **[CrossInk](https
 
 ## Goal and scope
 
-CrossHarbor aims to keep the upstream CrossInk reading experience and stability, while adding practical Hardcover tracking workflows for daily use on constrained hardware.
+CrossHarbor aims to build upon the CrossInk reading experience and stability, while adding practical Hardcover tracking workflows for daily use on constrained hardware.
 
 In scope:
-- Keep rebasing/syncing with mainline CrossInk.
 - Keep changes narrow, readable, and maintainable.
 - Prioritize features that materially improve focused reading on-device.
 - Add lightweight Hardcover features (status/progress/rating/linking) that support reading flow without turning the firmware into a full social/discovery client.
