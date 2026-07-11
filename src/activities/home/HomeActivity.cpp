@@ -291,7 +291,8 @@ int findMenuActionIndex(const HomeMenuEntries& items, HomeMenuAction action) {
 }
 
 bool isMinimalTheme() {
-  return static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme) == CrossPointSettings::UI_THEME::MINIMAL;
+  const auto theme = static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme);
+  return theme == CrossPointSettings::UI_THEME::MINIMAL || theme == CrossPointSettings::UI_THEME::DASHBOARD;
 }
 
 bool isAnyFrontButtonPressed(const MappedInputManager& mappedInput) {
@@ -1025,7 +1026,7 @@ void HomeActivity::renderCarouselFrameToCurrentBuffer(int bookIdx, BookReadingSt
       Rect{0, metrics.homeTopPadding + metrics.homeCoverTileHeight + metrics.verticalSpacing, pageWidth,
            pageHeight - (metrics.headerHeight + metrics.homeTopPadding + metrics.verticalSpacing * 2 +
                          metrics.buttonHintsHeight)},
-      static_cast<int>(menuItems.size()), -1, [&menuItems](int index) { return std::string(menuItems[index].label); },
+      static_cast<int>(menuItems.size()), -1, [&menuItems](int index) { return menuItems[index].label; },
       [&menuItems](int index) { return menuItems[index].icon; });
 
   const auto labels = mappedInput.mapLabels("", tr(STR_SELECT), tr(STR_DIR_LEFT), tr(STR_DIR_RIGHT));
@@ -1570,7 +1571,7 @@ void HomeActivity::render(RenderLock&&) {
       GUI.drawButtonMenu(
           renderer, Rect{0, metrics.homeTopPadding, pageWidth, pageHeight - metrics.homeTopPadding},
           static_cast<int>(menuItems.size()), minimalMenuIndex,
-          [&menuItems](int index) { return std::string(menuItems[index].label); },
+          [&menuItems](int index) { return menuItems[index].label; },
           [&menuItems](int index) { return menuItems[index].icon; });
       const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
       GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
@@ -1639,7 +1640,7 @@ void HomeActivity::render(RenderLock&&) {
             CrossPointSettings::UI_THEME::LYRA_CAROUSEL) {
           static_cast<const LyraCarouselTheme&>(GUI).drawButtonMenuSelectionOverlay(
               renderer, static_cast<int>(menuItems.size()), selectorIndex - recentBooks.size(),
-              [&menuItems](int index) { return std::string(menuItems[index].label); },
+              [&menuItems](int index) { return menuItems[index].label; },
               [&menuItems](int index) { return menuItems[index].icon; });
         }
       }
@@ -1689,7 +1690,7 @@ void HomeActivity::render(RenderLock&&) {
   GUI.drawButtonMenu(
       renderer, Rect{0, menuStartY, pageWidth, menuHeight}, static_cast<int>(menuItems.size()),
       selectorIndex - getHomeMenuSelectionOffset(recentBooks),
-      [&menuItems](int index) { return std::string(menuItems[index].label); },
+      [&menuItems](int index) { return menuItems[index].label; },
       [&menuItems](int index) { return menuItems[index].icon; });
 
   const bool isCarouselTheme =
