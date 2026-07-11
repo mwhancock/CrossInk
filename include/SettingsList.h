@@ -566,6 +566,8 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
         "sleepTimeoutMinutes", StrId::STR_CAT_SYSTEM));
     add(SettingInfo::Toggle(StrId::STR_SHOW_HIDDEN_FILES, &CrossPointSettings::showHiddenFiles, "showHiddenFiles",
                             StrId::STR_CAT_SYSTEM));
+    add(SettingInfo::Toggle(StrId::STR_VISUAL_LIBRARY, &CrossPointSettings::visualLibrary, "visualLibrary",
+                            StrId::STR_CAT_SYSTEM));
     add(SettingInfo::Toggle(StrId::STR_HIDE_FILE_EXTENSION, &CrossPointSettings::hideFileExtension, "hideFileExtension",
                             StrId::STR_CAT_SYSTEM));
     add(SettingInfo::Enum(StrId::STR_FILE_BROWSER_DISPLAY, &CrossPointSettings::fileBrowserDisplay,
@@ -941,8 +943,9 @@ inline std::vector<SettingInfo> buildSystemDeviceSettingsList(const std::vector<
 
 inline std::vector<SettingInfo> buildSystemFilesCacheSettingsList(const std::vector<SettingInfo>& allSettings) {
   std::vector<SettingInfo> settings;
-  settings.reserve(6);
+  settings.reserve(7);
   addSettingByName(settings, allSettings, StrId::STR_SHOW_HIDDEN_FILES);
+  addSettingByName(settings, allSettings, StrId::STR_VISUAL_LIBRARY);
   addSettingByName(settings, allSettings, StrId::STR_HIDE_FILE_EXTENSION);
   addSettingByName(settings, allSettings, StrId::STR_FILE_BROWSER_DISPLAY);
   addSettingByName(settings, allSettings, StrId::STR_REMOVE_READ_FROM_RECENTS);

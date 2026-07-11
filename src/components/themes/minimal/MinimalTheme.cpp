@@ -26,6 +26,7 @@
 #include "components/icons/book24.h"
 #include "components/icons/cover.h"
 #include "components/icons/evening.h"
+#include "components/icons/folder.h"
 #include "components/icons/morning.h"
 #include "components/icons/night.h"
 #include "components/icons/streak.h"
@@ -732,5 +733,71 @@ void MinimalTheme::drawButtonMenu(GfxRenderer& renderer, Rect rect, int buttonCo
     const int labelW = renderer.getTextWidth(UI_12_FONT_ID, label.c_str());
     const int labelY = rowY + (kMenuRowHeight - renderer.getLineHeight(UI_12_FONT_ID)) / 2;
     renderer.drawText(UI_12_FONT_ID, panelX + (panelW - labelW) / 2, labelY, label.c_str());
+  }
+}
+
+void MinimalTheme::drawFileGrid(const GfxRenderer& renderer, Rect rect, int cols, int rows, int itemCount, int selectedIndex,
+                                const std::function<std::string(int index)>& itemTitle,
+                                const std::function<bool(int index)>& isDirectory,
+                                const std::function<std::string(int index)>& itemPath) const {
+  if (cols <= 0 || rows <= 0 || itemCount <= 0) return;
+
+  const int cellWidth = rect.width / cols;
+  const int cellHeight = rect.height / rows;
+  const int coverPadding = 10;
+  
+  int pageItems = cols * rows;
+  int page = selectedIndex / pageItems;
+  int startIndex = page * pageItems;
+  int endIndex = std::min(itemCount, startIndex + pageItems);
+  
+  for (int i = startIndex; i < endIndex; ++i) {
+    const int idxOnPage = i - startIndex;
+    const int col = idxOnPage % cols;
+    const int row = idxOnPage / cols;
+    
+    const int cx = rect.x + col * cellWidth;
+    const int cy = rect.y + row * cellHeight;
+    const Rect cellRect{cx, cy, cellWidth, cellHeight};
+    
+    // Draw selection
+    if (i == selectedIndex) {
+      renderer.fillRoundedRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height, kButtonCornerRadius, Color::LightGray);
+      renderer.drawRoundedRect(cellRect.x, cellRect.y, cellRect.width, cellRect.height, 2, kButtonCornerRadius, true);
+    }
+    
+    const int innerW = cellWidth - coverPadding * 2;
+    // Leave room for title at bottom
+    const int titleH = renderer.getLineHeight(UI_10_FONT_ID) * 2 + 4; // 2 lines
+    const int innerH = cellHeight - coverPadding * 2 - titleH;
+    
+    const Rect contentRect{cx + coverPadding, cy + coverPadding, innerW, innerH};
+    
+    const bool isDir = isDirectory(i);
+    if (isDir) {
+      const int iconSize = 24; // folder icon size is 24x24
+      const int iconX = contentRect.x + (contentRect.width - iconSize) / 2;
+      const int iconY = contentRect.y + (contentRect.height - iconSize) / 2;
+      renderer.drawIcon(FolderIcon, iconX, iconY, iconSize, iconSize);
+    } else {
+      RecentBook dummyBook;
+      dummyBook.path = itemPath(i);
+      dummyBook.title = itemTitle(i);
+      dummyBook.coverBmpPath = "dummy"; // bypass early return in coverPathForImageRect
+      
+      // We'll reuse the drawBookCover method defined in MinimalTheme namespace!
+      drawBookCover(renderer, contentRect, dummyBook, Color::White);
+    }
+    
+    // Draw Title
+    std::string title = itemTitle(i);
+    // Wrap to 2 lines
+    auto lines = renderer.wrappedText(UI_10_FONT_ID, title.c_str(), cellRect.width - 8, 2);
+    int textY = contentRect.y + contentRect.height + 4;
+    for (const auto& line : lines) {
+      int tw = renderer.getTextWidth(UI_10_FONT_ID, line.c_str());
+      renderer.drawText(UI_10_FONT_ID, cellRect.x + (cellRect.width - tw) / 2, textY, line.c_str());
+      textY += renderer.getLineHeight(UI_10_FONT_ID);
+    }
   }
 }

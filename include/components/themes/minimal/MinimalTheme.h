@@ -62,6 +62,10 @@ class MinimalTheme : public LyraTheme {
   void drawButtonMenu(GfxRenderer& renderer, Rect rect, int buttonCount, int selectedIndex,
                       const std::function<std::string(int index)>& buttonLabel,
                       const std::function<UIIcon(int index)>& rowIcon) const override;
+  void drawFileGrid(const GfxRenderer& renderer, Rect rect, int cols, int rows, int itemCount, int selectedIndex,
+                    const std::function<std::string(int index)>& itemTitle,
+                    const std::function<bool(int index)>& isDirectory,
+                    const std::function<std::string(int index)>& itemPath) const override;
   bool usesCompactFileBrowserRows() const override { return true; }
   int compactFileBrowserRowHeight(const GfxRenderer& renderer) const override;
 };

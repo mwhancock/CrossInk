@@ -738,7 +738,10 @@ void FileBrowserActivity::loop() {
   int pageItems = UITheme::getNumberOfItemsPerPage(renderer, true, false, true, false, pathReserved);
   const bool compactFileRows =
       !usingIndex && SETTINGS.fileBrowserDisplay == CrossPointSettings::FILE_BROWSER_DISPLAY_2_LINES;
-  if (compactFileRows) {
+  
+  if (SETTINGS.visualLibrary && mode == Mode::Books && basepath != "/") {
+    pageItems = 9;
+  } else if (compactFileRows) {
     const auto& metrics = UITheme::getInstance().getMetrics();
     const int contentTop = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
     const int contentHeight =
@@ -841,25 +844,67 @@ void FileBrowserActivity::loop() {
   }
 
   int listSize = static_cast<int>(entryCount());
-  buttonNavigator.onNextRelease([this, listSize] {
-    selectorIndex = ButtonNavigator::nextIndex(static_cast<int>(selectorIndex), listSize);
-    requestUpdate();
-  });
+  
+  if (SETTINGS.visualLibrary && mode == Mode::Books && basepath != "/") {
+    const int cols = 3;
+    buttonNavigator.onRelease({MappedInputManager::Button::Right}, [this, listSize] {
+      if (selectorIndex < listSize - 1) selectorIndex++;
+      requestUpdate();
+    });
+    buttonNavigator.onRelease({MappedInputManager::Button::Left}, [this] {
+      if (selectorIndex > 0) selectorIndex--;
+      requestUpdate();
+    });
+    buttonNavigator.onRelease({MappedInputManager::Button::Down}, [this, listSize, cols] {
+      if (selectorIndex + cols < listSize) selectorIndex += cols;
+      else selectorIndex = listSize - 1;
+      requestUpdate();
+    });
+    buttonNavigator.onRelease({MappedInputManager::Button::Up}, [this, cols] {
+      if (selectorIndex >= (size_t)cols) selectorIndex -= cols;
+      else selectorIndex = 0;
+      requestUpdate();
+    });
 
-  buttonNavigator.onPreviousRelease([this, listSize] {
-    selectorIndex = ButtonNavigator::previousIndex(static_cast<int>(selectorIndex), listSize);
-    requestUpdate();
-  });
+    buttonNavigator.onContinuous({MappedInputManager::Button::Right}, [this, listSize] {
+      if (selectorIndex < listSize - 1) selectorIndex++;
+      requestUpdate();
+    });
+    buttonNavigator.onContinuous({MappedInputManager::Button::Left}, [this] {
+      if (selectorIndex > 0) selectorIndex--;
+      requestUpdate();
+    });
+    buttonNavigator.onContinuous({MappedInputManager::Button::Down}, [this, listSize, cols] {
+      if (selectorIndex + cols < listSize) selectorIndex += cols;
+      else selectorIndex = listSize - 1;
+      requestUpdate();
+    });
+    buttonNavigator.onContinuous({MappedInputManager::Button::Up}, [this, cols] {
+      if (selectorIndex >= (size_t)cols) selectorIndex -= cols;
+      else selectorIndex = 0;
+      requestUpdate();
+    });
+  } else {
+    buttonNavigator.onNextRelease([this, listSize] {
+      selectorIndex = ButtonNavigator::nextIndex(static_cast<int>(selectorIndex), listSize);
+      requestUpdate();
+    });
 
-  buttonNavigator.onNextContinuous([this, listSize, pageItems] {
-    selectorIndex = ButtonNavigator::nextPageIndex(static_cast<int>(selectorIndex), listSize, pageItems);
-    requestUpdate();
-  });
+    buttonNavigator.onPreviousRelease([this, listSize] {
+      selectorIndex = ButtonNavigator::previousIndex(static_cast<int>(selectorIndex), listSize);
+      requestUpdate();
+    });
 
-  buttonNavigator.onPreviousContinuous([this, listSize, pageItems] {
-    selectorIndex = ButtonNavigator::previousPageIndex(static_cast<int>(selectorIndex), listSize, pageItems);
-    requestUpdate();
-  });
+    buttonNavigator.onNextContinuous([this, listSize, pageItems] {
+      selectorIndex = ButtonNavigator::nextPageIndex(static_cast<int>(selectorIndex), listSize, pageItems);
+      requestUpdate();
+    });
+
+    buttonNavigator.onPreviousContinuous([this, listSize, pageItems] {
+      selectorIndex = ButtonNavigator::previousPageIndex(static_cast<int>(selectorIndex), listSize, pageItems);
+      requestUpdate();
+    });
+  }
 }
 
 namespace {
@@ -916,42 +961,59 @@ void FileBrowserActivity::render(RenderLock&&) {
                                : ((mode == Mode::PickFirmware) ? tr(STR_NO_BIN_FILES) : tr(STR_NO_FILES_FOUND));
     renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding, contentTop + 20, emptyMsg);
   } else {
-    const bool compactFileRows =
-        !usingIndex && SETTINGS.fileBrowserDisplay == CrossPointSettings::FILE_BROWSER_DISPLAY_2_LINES;
-    std::function<std::string(int)> compactRowMarker;
-    if (compactFileRows) {
-      compactRowMarker = [this](int index) {
-        const std::string entry = entryNameAt(index);
-        return !entry.empty() && entry.back() == '/' ? "folder" : "";
-      };
-    }
-    const auto rowTitle = [this](int index) {
-      const std::string entry = entryNameAt(index);
-      return getFileName(entry);
-    };
-    const auto rowIcon = [this](int index) {
-      const std::string entry = entryNameAt(index);
-      return UITheme::getFileIcon(entry);
-    };
-    const auto rowValue = [this](int index) {
-      const std::string entry = entryNameAt(index);
-      const std::string extension = SETTINGS.hideFileExtension != 0 ? std::string() : getFileExtension(entry);
-      const std::string fullPath = buildFullPath(basepath, entry);
-      if (entry.back() == '/' && isPreferredSleepFolder(fullPath)) {
-        return std::string("*");
-      }
-      if (isPinnedSleepFavorite(fullPath)) {
-        return extension.empty() ? std::string("*") : "* " + extension;
-      }
-      return extension;
-    };
     const Rect listRect{0, contentTop, pageWidth, contentHeight};
-    if (compactFileRows) {
-      MinimalTheme::drawCompactFileBrowserList(renderer, listRect, static_cast<int>(visibleEntries), selectorIndex,
-                                               rowTitle, compactRowMarker, rowIcon, rowValue);
+
+    if (SETTINGS.visualLibrary && mode == Mode::Books && basepath != "/") {
+      const auto rowTitle = [this](int index) {
+        const std::string entry = entryNameAt(index);
+        return getFileName(entry);
+      };
+      const auto isDirectory = [this](int index) {
+        const std::string entry = entryNameAt(index);
+        return !entry.empty() && entry.back() == '/';
+      };
+      const auto itemPath = [this](int index) {
+        return buildFullPath(basepath, entryNameAt(index));
+      };
+      
+      GUI.drawFileGrid(renderer, listRect, 3, 3, static_cast<int>(visibleEntries), selectorIndex, rowTitle, isDirectory, itemPath);
     } else {
-      GUI.drawList(renderer, listRect, static_cast<int>(visibleEntries), selectorIndex, rowTitle, compactRowMarker,
-                   rowIcon, rowValue, false);
+      const bool compactFileRows =
+          !usingIndex && SETTINGS.fileBrowserDisplay == CrossPointSettings::FILE_BROWSER_DISPLAY_2_LINES;
+      std::function<std::string(int)> compactRowMarker;
+      if (compactFileRows) {
+        compactRowMarker = [this](int index) {
+          const std::string entry = entryNameAt(index);
+          return !entry.empty() && entry.back() == '/' ? "folder" : "";
+        };
+      }
+      const auto rowTitle = [this](int index) {
+        const std::string entry = entryNameAt(index);
+        return getFileName(entry);
+      };
+      const auto rowIcon = [this](int index) {
+        const std::string entry = entryNameAt(index);
+        return UITheme::getFileIcon(entry);
+      };
+      const auto rowValue = [this](int index) {
+        const std::string entry = entryNameAt(index);
+        const std::string extension = SETTINGS.hideFileExtension != 0 ? std::string() : getFileExtension(entry);
+        const std::string fullPath = buildFullPath(basepath, entry);
+        if (entry.back() == '/' && isPreferredSleepFolder(fullPath)) {
+          return std::string("*");
+        }
+        if (isPinnedSleepFavorite(fullPath)) {
+          return extension.empty() ? std::string("*") : "* " + extension;
+        }
+        return extension;
+      };
+      if (compactFileRows) {
+        MinimalTheme::drawCompactFileBrowserList(renderer, listRect, static_cast<int>(visibleEntries), selectorIndex,
+                                                 rowTitle, compactRowMarker, rowIcon, rowValue);
+      } else {
+        GUI.drawList(renderer, listRect, static_cast<int>(visibleEntries), selectorIndex, rowTitle, compactRowMarker,
+                     rowIcon, rowValue, false);
+      }
     }
   }
 
@@ -987,8 +1049,10 @@ void FileBrowserActivity::render(RenderLock&&) {
   const bool selectingFirmwareFile =
       mode == Mode::PickFirmware && visibleEntries > 0 && std::string(entryNameAt(selectorIndex)).back() != '/';
   const char* confirmLabel = visibleEntries == 0 ? "" : (selectingFirmwareFile ? tr(STR_SELECT) : tr(STR_OPEN));
-  const auto labels = mappedInput.mapLabels(backLabel, confirmLabel, visibleEntries == 0 ? "" : tr(STR_DIR_UP),
-                                            visibleEntries == 0 ? "" : tr(STR_DIR_DOWN));
+  const bool usingGrid = SETTINGS.visualLibrary && mode == Mode::Books && basepath != "/";
+  const char* prevHint = visibleEntries == 0 ? "" : (usingGrid ? tr(STR_DIR_LEFT) : tr(STR_DIR_UP));
+  const char* nextHint = visibleEntries == 0 ? "" : (usingGrid ? tr(STR_DIR_RIGHT) : tr(STR_DIR_DOWN));
+  const auto labels = mappedInput.mapLabels(backLabel, confirmLabel, prevHint, nextHint);
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
   if (mode == Mode::Books && basepath == "/") {

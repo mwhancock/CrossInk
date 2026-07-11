@@ -371,6 +371,13 @@ void BaseTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, 
   }
 }
 
+void BaseTheme::drawFileGrid(const GfxRenderer& renderer, Rect rect, int cols, int rows, int itemCount,
+                             int selectedIndex, const std::function<std::string(int index)>& itemTitle,
+                             const std::function<bool(int index)>& isDirectory,
+                             const std::function<std::string(int index)>& itemPath) const {
+  // Empty default implementation - to be overridden by themes that support it
+}
+
 void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* title, const char* subtitle,
                            const bool readerContext) const {
   // Hide last battery draw
